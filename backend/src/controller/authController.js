@@ -6,6 +6,7 @@ const User =require("../models/User");
 const {generateAccessToken,generateRefreshToken}=require("../utils/generateToken");
 const cookieOptions = require("../utils/cookieOption");
 const { jwtRefreshSecret } = require("../config/env");
+const { hashed,compareToken } = require("../utils/token");
 
 //^ register api
 exports.register = asyncHandler(async(req,res)=>{
@@ -24,6 +25,7 @@ exports.register = asyncHandler(async(req,res)=>{
   console.log(typeof cookieOptions);
   const accessToken = generateAccessToken(newUser._id,newUser.role);
   const refreshToken = generateRefreshToken(newUser._id);
+  newUser.refreshToken = await hashed(refreshToken);
   await newUser.save();
   res.cookie(
     "refreshToken",
@@ -50,6 +52,8 @@ exports.login = asyncHandler(async(req,res)=>{
   }
   const accessToken = generateAccessToken(user._id,user.role);
   const refreshToken = generateRefreshToken(user._id);
+  user.refreshToken = await hashed(refreshToken);
+  await user.save();
   res.cookie("refreshToken",refreshToken,cookieOptions);
   res.status(200).json({success:true,message:"Login successfull",accessToken,user:user.toJSON()});
 
@@ -62,11 +66,17 @@ exports.refreshToken = asyncHandler(async(req,res)=>{
     throw new ApiError(401,"Refresh token is missing!");
   }
   const decoded = jwt.verify(token,jwtRefreshSecret);
-  console.log(decoded);
-  const user = await User.findById(decoded.id);
+  const user = await User.findById(decoded.id).select(" +refreshToken");
   if(!user){
     throw new ApiError(401,"User not found!");
   }
+  const isValid = await compareToken(token,user.refreshToken);
+  if(!isValid){
+    throw new ApiError(401,"Refresh token is not matched")
+  }
+  const newRefreshToken = generateRefreshToken(user._id);
+  user.refreshToken  = await hashed(newRefreshToken);
+  await user.save();
   const accessToken = generateAccessToken(user._id,user.role);
   res.status(200).json({success:true,accessToken});
 })
@@ -74,7 +84,15 @@ exports.refreshToken = asyncHandler(async(req,res)=>{
 //* logout api
 exports.logout = asyncHandler(async(req,res)=>{
   const token = req.cookies.refreshToken;
+  if(token){
+    const decode = jwt.verify(token,jwtRefreshSecret);
+    await User.findByIdAndUpdate(decode.id,{
+      $unset:{
+        refreshToken:1
+      }
+    })
+  }
   res.clearCookie("refreshToken",cookieOptions);
+
   res.json({success:true,message:"Logout successfully."})
 });
-

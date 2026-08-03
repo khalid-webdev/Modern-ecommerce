@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema({
   name:{type:String,required:[true,"Name is required!"],trim:true},
   email:{type:String,required:[true,"email is required!"],unique:true, lowercase:true,trim:true},
   password:{type:String,required:[true,"Password is required!"],minLength:8,select:false},
+  refreshToken:{type:String,select:false},
   role:{type:String,enum:["user","admin"],default:"user"},
   addresses:[addressSchema],
 },{timestamps:true});
@@ -31,7 +32,7 @@ userSchema.methods.comparePassword=async function (inputPass) {
 userSchema.methods.toJSON = function(){
   const obj = this.toObject();
   delete obj.password;
-  // delete obj.refreshToken;
+  delete obj.refreshToken;
   return obj;
 }
 module.exports = mongoose.model("User",userSchema);
