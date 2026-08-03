@@ -70,3 +70,11 @@ exports.refreshToken = asyncHandler(async(req,res)=>{
   const accessToken = generateAccessToken(user._id,user.role);
   res.status(200).json({success:true,accessToken});
 })
+
+//* logout api
+exports.logout = asyncHandler(async(req,res)=>{
+  const token = req.cookies.refreshToken;
+  res.clearCookie("refreshToken",cookieOptions);
+  res.json({success:true,message:"Logout successfully."})
+});
+
