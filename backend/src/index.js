@@ -3,7 +3,7 @@ const helmet=require("helmet");
 const cookieParser=require("cookie-parser");
 const cors = require("cors");
 const morgan = require("morgan");
-const {clientUrl,nodeEnv}=require("./config/env.js");
+const env=require("./config/env.js");
 
 const notFound = require("./middleware/notFound.js");
 const errorHandler = require("./middleware/errorHandler.js");
@@ -15,10 +15,10 @@ const app=express();
 //middleware
 app.use(helmet());
 app.use(cors({
-  origin:clientUrl,
+  origin:env.clientUrl,
   credentials:true
 }));
-if(nodeEnv==="development"){
+if(env.nodeEnv==="development"){
   app.use(morgan("dev"));
 }
 app.use(express.json());

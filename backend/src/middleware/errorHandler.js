@@ -1,10 +1,19 @@
-const {nodeEnv} =require("../config/env");
+const env=require("../config/env");
+const ApiError =require("../utils/ApiError");
 const errorHandler = (err,req,res,next)=>{
-  let statusCode = req.statusCode===200? 500:res.statusCode;
-  res.status(statusCode).json({
+  let error=err;
+  if(!(error instanceof ApiError)){
+    error= new ApiError(
+      error.statusCode || 500,
+      error.message||"Internal server error !"
+    )
+  }
+  let statusCode = req.statusCode===200 ? 500:res.statusCode;
+  return res.status(error.statusCode).json({
     success:false,
-    message:err.message,
-    stack: nodeEnv==="development" ?err.stack:undefined
+    message:error.message,
+    errors:error.errors,
+    stack: env.nodeEnv==="development" ?error.stack:undefined
   });
 };
 

@@ -1,28 +1,29 @@
-const path = require("path");
-const dotenv = require("dotenv");
-
+const dotenv =require("dotenv");
 dotenv.config({quiet:true });
 
-const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
-const mongodbUri = process.env.N_MONGO;
-const port = process.env.PORT || 5000;
-const nodeEnv = process.env.NODE_ENV;
-const jwtAccessSecret=process.env.JWT_ACCESS_SECRET
-const jwtRefreshSecret=process.env.JWT_REFRESH_SECRET
-const jwtAccessTime=process.env.JWT_ACCESS_EXPIRY
-const jwtRefreshTime=process.env.JWT_REFRESH_EXPIRY
+const requiredEnvVariables =["PORT","N_MONGO","JWT_ACCESS_SECRET","JWT_REFRESH_SECRET"];
 
-if (!mongodbUri) {
-  throw new Error("MONGO_URI is not defined. Please add MONGO_URI to your .env file or environment variables.");
-}
 
-module.exports = {
-  clientUrl,
-  port,
-  nodeEnv,
-  mongodbUri,
-  jwtAccessSecret,
-  jwtRefreshSecret,
-  jwtAccessTime,
-  jwtRefreshTime,
+requiredEnvVariables.forEach(key => {
+if(!process.env[key]){
+  throw new Error(`Missing required env variable ${key}`)
 };
+});
+
+
+  const env = {
+    nodeEnv:process.env.NODE_ENV || "development",
+    port:Number(process.env.PORT) || 5000,
+    clientUrl:process.env.CLIENT_URL,
+    mongoUri:process.env.N_MONGO,
+    jwt:{
+      accessSecret:process.env.JWT_ACCESS_SECRET,
+      refreshSecret:process.env.JWT_REFRESH_SECRET,
+      accessExpires:process.env.JWT_ACCESS_EXPIRY,
+      refreshExpires:process.env.JWT_REFRESH_EXPIRY
+    }
+  }
+
+
+
+module.exports = env;
